@@ -1,0 +1,32 @@
+<!-- templates/results.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>评分结果</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        .container { max-width: 1000px; margin: auto; }
+        h1 { text-align: center; }
+        .results { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .card { border: 1px solid #ccc; padding: 10px; text-align: center; }
+        .card img { max-width: 200px; height: auto; }
+        .score { margin-top: 10px; font-weight: bold; }
+        a { display: block; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>评分结果</h1>
+        <div class="results">
+            {% for result in results %}
+            <div class="card">
+                <img src="{{ result.url }}" alt="{{ result.filename }}">
+                <div class="score">分数: {{ result.score }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="{{ url_for('upload_folder') }}">返回上传页面</a>
+    </div>
+</body>
+</html>
