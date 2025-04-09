@@ -7,7 +7,7 @@ from scipy.stats import pearsonr, spearmanr
 from tensorboardX import SummaryWriter
 from sklearn.metrics import accuracy_score
 from models import build_model, load_and_build_model
-from dataset import AVADataset
+from dataset import AVA_dataset
 from util import EDMLoss, AverageMeter
 import option
 import nni

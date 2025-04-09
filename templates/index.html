@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>AI图片分析与评分</title>
+</head>
+<body>
+    <h2>上传图片进行AI评分与分析</h2>
+    <input type="file" id="imageInput">
+    <button onclick="upload()">上传并实时分析</button>
+
+    <h3>上传的图片:</h3>
+    <img id="uploadedImage" src="" style="max-width:500px; display:none; margin-bottom:10px; border:1px solid #ccc;">
+
+    <h3>实时分析结果:</h3>
+    <pre id="result" style="white-space: pre-wrap; border:1px solid #ccc; padding:10px;"></pre>
+
+    <script>
+        function upload() {
+            const imageInput = document.getElementById('imageInput');
+            const result = document.getElementById('result');
+            const uploadedImage = document.getElementById('uploadedImage');
+
+            if (!imageInput.files[0]) {
+                alert("请先选择图片！");
+                return;
+            }
+
+            result.textContent = "";
+            uploadedImage.src = URL.createObjectURL(imageInput.files[0]);
+            uploadedImage.style.display = 'block';
+
+            let formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) return;
+                        result.textContent += decoder.decode(value, { stream: true });
+                        read();
+                    });
+                }
+
+                read();
+            }).catch(err => {
+                result.textContent = "请求失败：" + err;
+            });
+        }
+    </script>
+</body>
+</html>

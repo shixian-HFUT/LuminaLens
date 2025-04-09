@@ -77,7 +77,7 @@ def preprocess_image(img_path):
                                  std=[0.229, 0.224, 0.225])
         ])
 
-        img = Image.open(img_path).convert('RGB')
+        img = Image.open(open(img_path, 'rb')).convert('RGB')
         return transform(img).unsqueeze(0)  # 添加batch维度
     except Exception as e:
         raise ValueError(f"Image processing error: {str(e)}")
