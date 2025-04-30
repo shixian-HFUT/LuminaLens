@@ -2,55 +2,199 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>AI图片分析与评分</title>
+    <title>图片评分与AI分析</title>
+    <!-- 引入 Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* 为图片容器添加一些基本样式 */
+        .image-card {
+            @apply bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden;
+        }
+        .image-card img {
+            @apply w-full h-48 object-cover; /* 固定图片高度 */
+        }
+        .image-card-info {
+            @apply p-3;
+        }
+        .image-card-score {
+            @apply text-sm font-semibold text-blue-600;
+        }
+        .image-card-tags {
+            @apply text-xs text-gray-600 mt-1 break-words; /* 允许标签换行 */
+        }
+    </style>
 </head>
-<body>
-    <h2>上传图片进行AI评分与分析</h2>
-    <input type="file" id="imageInput">
-    <button onclick="upload()">上传并实时分析</button>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center py-10">
+    <div class="bg-white shadow-xl rounded-xl p-6 w-full max-w-6xl"> <!-- 增加最大宽度 -->
+        <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">图片评分与AI分析</h2>
 
-    <h3>上传的图片:</h3>
-    <img id="uploadedImage" src="" style="max-width:500px; display:none; margin-bottom:10px; border:1px solid #ccc;">
+        <!-- 图片上传区域 -->
+        <div class="mb-6">
+            <input type="file" id="imageUpload" accept="image/*" class="w-full mb-3 p-2 border rounded">
+            <button id="uploadBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition">
+                上传并分析图片
+            </button>
+        </div>
 
-    <h3>实时分析结果:</h3>
-    <pre id="result" style="white-space: pre-wrap; border:1px solid #ccc; padding:10px;"></pre>
+        <!-- 图片展示区域 (原图和相似图并排) -->
+        <div id="imageDisplayContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 hidden"> <!-- 使用 Grid 布局，默认隐藏 -->
+            <!-- 原图容器 -->
+            <div id="originalImageContainer" class="md:col-span-1">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">原图</h3>
+                <div class="image-card">
+                    <img id="originalPreview" src="" alt="原图预览" class="w-full h-auto rounded-lg"> <!-- 图片高度自适应 -->
+                </div>
+            </div>
+            <!-- 相似图容器 -->
+            <div id="similarImagesSection" class="md:col-span-2">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">评分最高的相似图片</h3>
+                <div id="similarImagesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 相似图片卡片将在这里动态添加 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- AI分析结果 -->
+        <div id="analysisSection" class="mt-6 hidden"> <!-- 默认隐藏 -->
+             <h3 class="text-xl font-semibold text-gray-800 mb-3">AI 分析与评分</h3>
+            <div id="result" class="whitespace-pre-wrap text-gray-700 h-64 overflow-y-auto border rounded-lg p-4 bg-gray-50">
+                等待分析结果...
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        function upload() {
-            const imageInput = document.getElementById('imageInput');
-            const result = document.getElementById('result');
-            const uploadedImage = document.getElementById('uploadedImage');
+        // 获取DOM元素
+        const uploadBtn = document.getElementById('uploadBtn');
+        const imageUpload = document.getElementById('imageUpload');
+        const originalPreviewImg = document.getElementById('originalPreview');
+        const resultDiv = document.getElementById('result');
+        const similarImagesContainer = document.getElementById('similarImagesContainer');
+        const imageDisplayContainer = document.getElementById('imageDisplayContainer');
+        const analysisSection = document.getElementById('analysisSection');
+        const originalImageContainer = document.getElementById('originalImageContainer');
+        const similarImagesSection = document.getElementById('similarImagesSection');
 
-            if (!imageInput.files[0]) {
-                alert("请先选择图片！");
+        // 上传按钮点击事件
+        uploadBtn.onclick = function () {
+            const file = imageUpload.files[0];
+
+            if (!file) {
+                alert("请先选择一张图片哦~");
                 return;
             }
 
-            result.textContent = "";
-            uploadedImage.src = URL.createObjectURL(imageInput.files[0]);
-            uploadedImage.style.display = 'block';
+            // 重置界面状态
+            originalPreviewImg.src = '';
+            similarImagesContainer.innerHTML = '<p class="text-gray-500">正在查找相似图片...</p>';
+            resultDiv.textContent = '正在分析中...';
+            imageDisplayContainer.classList.add('hidden'); // 隐藏图片展示区
+            analysisSection.classList.add('hidden'); // 隐藏分析区
 
-            let formData = new FormData();
-            formData.append('image', imageInput.files[0]);
+            // 显示原图预览 (临时)
+            const readerPreview = new FileReader();
+            readerPreview.onload = function (e) {
+                // 可以在这里先显示一个小的预览，或者等待后端返回URL再显示
+                // originalPreviewImg.src = e.target.result; // 暂时不直接用 DataURL
+            };
+            readerPreview.readAsDataURL(file);
+
+            // 构建FormData并上传图片
+            const formData = new FormData();
+            formData.append('image', file);
+
+            // 显示加载状态
+            resultDiv.textContent = '正在上传和处理图片...';
+            analysisSection.classList.remove('hidden'); // 显示分析区（显示加载信息）
 
             fetch('/upload', {
                 method: 'POST',
                 body: formData
-            }).then(response => {
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder('utf-8');
-
-                function read() {
-                    reader.read().then(({ done, value }) => {
-                        if (done) return;
-                        result.textContent += decoder.decode(value, { stream: true });
-                        read();
-                    });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || '网络响应异常~'); });
+                }
+                return response.json();  // 获取返回的JSON
+            })
+            .then(data => {
+                // 检查是否有错误信息
+                if (data.error) {
+                    throw new Error(data.error);
                 }
 
-                read();
-            }).catch(err => {
-                result.textContent = "请求失败：" + err;
+                // 显示评分和AI分析结果
+                resultDiv.textContent = `图片评分：${data.score !== undefined ? data.score.toFixed(2) : 'N/A'}/10\n\nAI分析结果：\n${data.ai_analysis || '分析结果未提供'}`; // <-- 修改此处的键名
+                analysisSection.classList.remove('hidden'); // 确保分析区可见
+
+                // 显示原图 (使用后端返回的路径)
+                if (data.original_image) {
+                    originalPreviewImg.src = data.original_image;
+                    originalImageContainer.classList.remove('hidden');
+                } else {
+                    originalImageContainer.classList.add('hidden');
+                }
+
+                // 显示相似图片
+                if (data.similar_images && data.similar_images.length > 0) {
+                    displaySimilarImages(data.similar_images);
+                    similarImagesSection.classList.remove('hidden');
+                } else {
+                    similarImagesContainer.innerHTML = '<p class="text-gray-500">未找到相似图片。</p>';
+                    similarImagesSection.classList.remove('hidden'); // 仍然显示标题和提示信息
+                }
+
+                // 显示整个图片展示区域
+                imageDisplayContainer.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Fetch Error:', error);
+                resultDiv.textContent = '出错了喵~ ' + error.message;
+                analysisSection.classList.remove('hidden'); // 确保错误信息可见
+                imageDisplayContainer.classList.add('hidden'); // 隐藏图片区
+            });
+        };
+
+        // 显示相似图片 (接收对象数组)
+        function displaySimilarImages(similarImages) {
+            similarImagesContainer.innerHTML = '';  // 清空容器
+
+            if (!similarImages || similarImages.length === 0) {
+                similarImagesContainer.innerHTML = '<p class="text-gray-500">未找到相似图片。</p>';
+                return;
+            }
+
+            similarImages.forEach(imgData => {
+                const card = document.createElement('div');
+                card.classList.add('image-card');
+
+                const imgElement = document.createElement('img');
+                imgElement.src = imgData.path; // 使用对象中的路径
+                imgElement.alt = "相似图片";
+                // imgElement.classList.add('rounded-lg', 'w-full', 'h-auto', 'object-cover'); // 样式移到 .image-card img
+
+                const infoDiv = document.createElement('div');
+                infoDiv.classList.add('image-card-info');
+
+                const scoreElement = document.createElement('p');
+                scoreElement.classList.add('image-card-score');
+                // 检查评分是否存在且为数字
+                const scoreText = (typeof imgData.score === 'number' && !isNaN(imgData.score)) ? imgData.score.toFixed(2) : 'N/A';
+                scoreElement.textContent = `评分: ${scoreText}`;
+
+                const tagsElement = document.createElement('p');
+                tagsElement.classList.add('image-card-tags');
+                // 检查标签是否存在且为数组
+                const tagsText = (Array.isArray(imgData.tags) && imgData.tags.length > 0) ? imgData.tags.join(', ') : '无标签';
+                tagsElement.textContent = `标签: ${tagsText}`;
+
+                infoDiv.appendChild(scoreElement);
+                infoDiv.appendChild(tagsElement);
+                card.appendChild(imgElement);
+                card.appendChild(infoDiv);
+
+                similarImagesContainer.appendChild(card);
             });
         }
     </script>

@@ -1,2 +1,14 @@
 /dataset/
 *.pth
+/image_index.faiss
+/image_paths.npy
+/models/Qwen-VL-Chat-Int4/
+/static/
+/saved_similar_images/
+/image/
+/models/models--openai--clip-vit-base-patch32/
+/models/.locks/
+/AVA.txt
+/id_to_path.pkl
+/load_features.py
+/.trae/

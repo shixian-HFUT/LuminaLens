@@ -94,7 +94,7 @@ def predict(image_path):
     try:
         # 配置路径（需用户修改！）
         CONFIG_FILE = "configs/dat_base.yaml"  # 模型配置文件
-        MODEL_CKPT = 'AVA_AOT_vacc_0.8259_srcc_0.7596_vlcc_0.7710.pth'  # 模型权重文件
+        MODEL_CKPT = 'model_weights.pth'  # 模型权重文件
 
         # 加载模型
         model = load_model(CONFIG_FILE, MODEL_CKPT)
